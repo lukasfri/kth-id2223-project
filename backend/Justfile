@@ -1,0 +1,2 @@
+generate-protoc:
+  protoc --proto_path=src --python_out=build/gen --pyi_out=build/gen src/gtfs-realtime.proto
