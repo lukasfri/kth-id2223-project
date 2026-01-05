@@ -109,6 +109,11 @@ class Operator(Enum):
     VyVarmlandstrafik = "vy-varmlandstrafik"
     Ybuss = "ybuss"
 
+class FeedID(Enum):
+    ServiceAlerts = "ServiceAlerts"
+    VehiclePositions = "VehiclePositions"
+    TripUpdates = "TripUpdates"
+
 
 def download_koda_file(operator: Operator, year: int, month: int, day: int, api_key: str):
     date = f"{year:04d}-{month:02d}-{day:02d}"
@@ -122,6 +127,7 @@ def download_koda_file(operator: Operator, year: int, month: int, day: int, api_
 
     print(f"Downloading {url}...")
     response = requests.get(url)
+    print(response.status_code)
     with open(file_name, 'wb') as f:
         f.write(response.content)
     
@@ -131,14 +137,15 @@ def download_koda_file(operator: Operator, year: int, month: int, day: int, api_
     with zipfile.ZipFile(file_name, 'r') as zip_ref:
         zip_ref.extractall('./data/data-tmp')
 
-def download_gtfs_rt_file(operator: Operator, feedId: str, year: int, month: int, day: int, hour: int, api_key: str):
+def download_gtfs_rt_file(operator: Operator, feedId: FeedID, year: int, month: int, day: int, hour: int, api_key: str):
     date = f"{year:04d}-{month:02d}-{day:02d}"
 
-    url = f"https://api.koda.trafiklab.se/KoDa/api/v2/gtfs-rt/{operator.value}/{feedId}?date={date}&hour={hour:02d}&key={api_key}";
+    url = f"https://api.koda.trafiklab.se/KoDa/api/v2/gtfs-rt/{operator.value}/{feedId.value}?date={date}&hour={hour:02d}&key={api_key}";
 
     print(f"Downloading {url}...")
     response = requests.get(url)
-    file_name = f"./data/{operator.value}_{feedId}_{date}_{hour:02d}.7z"
+    print(response.status_code)
+    file_name = f"./data/{operator.value}_{feedId.value}_{date}_{hour:02d}.7z"
     with open(file_name, 'wb') as f:
         f.write(response.content)
     
@@ -178,10 +185,10 @@ def main():
     year = 2024
     month = 6
     day = 15
-    # download_koda_file(operator, year, month, day, API_KEY)
+    download_koda_file(operator, year, month, day, API_KEY)
 
-    feedId = "ServiceAlerts"
-    # download_gtfs_rt_file(operator, feedId, year, month, day, 10, API_KEY)
+    feedId = FeedID.VehiclePositions
+    download_gtfs_rt_file(operator, feedId, year, month, day, 10, API_KEY)
     
     sl_path = pl.Path(f"./data/sl_2024-06-15.zip")
 

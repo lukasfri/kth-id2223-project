@@ -1,0 +1,10 @@
+import gtfs_kit as gk
+feed = gk.read_feed("./data/sl_2024-06-15.zip", dist_units="m")
+print("Routes Columns")
+print(feed.routes.columns)
+print("Stops Columns")
+print(feed.stops.columns)
+print("Trips Columns")
+print(feed.trips.columns)
+print("Stop_times Columns")
+print(feed.stop_times.columns)
