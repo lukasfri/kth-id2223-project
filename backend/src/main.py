@@ -4,8 +4,6 @@ import gtfs_kit as gk
 import pathlib as pl
 from backend.src.common import Operator
 
-
-
 def main():
     load_dotenv()
     API_KEY = os.getenv("API_KEY")

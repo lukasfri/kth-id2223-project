@@ -57,6 +57,11 @@ class DataType(Enum):
     VEHICLE_POSITIONS = "vehicle_positions"
     OCCUPANCY = "occupancy"
 
+class FeedID(Enum):
+    ServiceAlerts = "ServiceAlerts"
+    VehiclePositions = "VehiclePositions"
+    TripUpdates = "TripUpdates"
+
 DT = DataType
 
 # Operator	Abbreviation	Static data	Real-time data	Vehicle positions	Occupancy data

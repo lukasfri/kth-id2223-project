@@ -1,5 +1,5 @@
 import os
-from common import Operator
+from common import FeedID, Operator
 import __generated__.gtfs_realtime_pb2 as gtfs_realtime_pb2
 import requests
 import py7zr
@@ -22,15 +22,15 @@ def download_gtfs_static_file(operator: Operator, *, api_key: str, data_dir: str
     with open(file_name, 'wb') as f:
         f.write(response.content)
 
-def download_gtfs_rt_file(operator: Operator, feedId: str, *, api_key: str, data_dir: str):
-    file_name = f"{data_dir}/{operator.value}_{feedId}.pb"
+def download_gtfs_rt_file(operator: Operator, feedId: FeedID, *, api_key: str, data_dir: str):
+    file_name = f"{data_dir}/{operator.value}_{feedId.value}.pb"
 
     # Check if data is already downloaded
     if os.path.exists(file_name):
         print(f"File {file_name} already exists. Skipping download.")
         return
 
-    url = f"https://opendata.samtrafiken.se/gtfs-rt/{operator.value}/{feedId}.pb?key={api_key}";
+    url = f"https://opendata.samtrafiken.se/gtfs-rt/{operator.value}/{feedId.value}.pb?key={api_key}";
 
     print(f"Downloading {url}...")
     response = requests.get(url)
