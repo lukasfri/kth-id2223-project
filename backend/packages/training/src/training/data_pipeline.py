@@ -85,9 +85,15 @@ def lag_times(df_exploded_with_stop_times:pd.DataFrame) -> pd.DataFrame:
 
     return df_exploded_with_stop_times
 
-def create_X_Y_df(from_station:str, to_station:str) -> tuple(pd.DataFrame, pd.DataFrame):
+def create_X_Y_df(from_station:str, to_station:str) -> tuple[pd.DataFrame, pd.DataFrame]:
 
     df = make_df_from_stations(from_station, to_station)
     df_lag = lag_times(df)
 
-    df_X = df_lag["arrival_time_planned"]
+    # TODO: add weather
+    df_X = df_lag["arrival_time_planned", "arrival_time_planned_prev", "arrival_time_late_prev", "stop_id"]
+    df_X["stop_id"] = df_X["stop_id"].astype("category")
+
+    df_y = df_lag["arrival_time_late"]
+
+    return df_X, df_y
