@@ -8,7 +8,9 @@ authors = [
     { name = "Georges Tohme", email = "tohme@kth.se" },
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "scikit-learn>=1.8.0",
+]
 
 [tool.uv.workspace]
 members = ["packages/training"]

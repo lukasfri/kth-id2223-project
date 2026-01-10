@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 import os
 
 from static import StaticData
@@ -8,9 +8,13 @@ from gtfs import load_pb_file
 from koda import download_koda_rt_file, download_koda_static_file
 
 
+
+
 def make_df_from_stations(from_station:str, to_station:str):
 
-    dateOfStatic = date(2024, 6, 15) # TODO: find better way
+    dateStr = os.environ.get("STATIC_DATA_DATE", "2024-06-15")
+    dateOfStatic = datetime.strptime(dateStr, "%y-%m-%d").date()
+
 
     static_data:StaticData
     if os.path.exists("./data/data-tmp/static_pkl/trips.pkl"):
