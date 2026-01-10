@@ -1,5 +1,6 @@
 import datetime
 import pandas as pd
+import __generated__.gtfs_realtime_pb2 as gtfs_rt
 
 class StaticData:
     trips: pd.DataFrame
@@ -53,10 +54,22 @@ class StaticData:
 
     @staticmethod
     def load_stop_times(path: str, date: datetime.date) -> pd.DataFrame:
+        DropOffType = gtfs_rt.TripUpdate.StopTimeUpdate.StopTimeProperties.DropOffPickupType
+        drop_off_type = pd.CategoricalDtype([
+            DropOffType.REGULAR,
+            DropOffType.NONE,
+            DropOffType.PHONE_AGENCY,
+            DropOffType.COORDINATE_WITH_DRIVER,
+        ])
+
         stop_times = pd.read_csv(path, dtype={
             "trip_id": pd.StringDtype(),
             "stop_id": pd.StringDtype(),
             "stop_headsign": pd.StringDtype(),
+            # "pickup_type": "Int64",
+            # "drop_off_type": "Int64",
+            "pickup_type": drop_off_type,
+            "drop_off_type": drop_off_type,
         })
 
         stop_times = stop_times.set_index(["trip_id", "stop_sequence"])
