@@ -7,7 +7,6 @@ from common import *
 from gtfs import load_pb_file
 from koda import download_koda_rt_file, download_koda_static_file
 
-from xgboost import XGBRegressor
 
 def make_df_from_stations(from_station:str, to_station:str):
 
@@ -56,3 +55,39 @@ def make_df_from_stations(from_station:str, to_station:str):
     return filtered_exp_df
 
     
+# TODO: 
+def get_historical_weather(latitude:float, longitude:float, start_date:date, end_date:date) -> pd.DataFrame:
+    
+    # Make sure all required weather variables are listed here
+    # The order of variables in hourly or daily is important to assign them correctly below
+    url = "https://archive-api.open-meteo.com/v1/archive"
+    params = {
+        "latitude": latitude,
+        "longitude": longitude,
+        "start_date": start_date,
+        "end_date": end_date,
+        "daily": ["temperature_2m_mean", "precipitation_sum", "wind_speed_10m_max", "wind_direction_10m_dominant"]
+    }
+
+    return pd.DataFrame()
+
+def lag_times(df_exploded_with_stop_times:pd.DataFrame) -> pd.DataFrame:
+
+    df_exploded_with_stop_times['arrival_time_prev'] = df_exploded_with_stop_times.groupby('trip_id')['arrival_time'].shift(1)
+    df_exploded_with_stop_times['departure_time_prev'] = df_exploded_with_stop_times.groupby('trip_id')['departure_time'].shift(1)
+    df_exploded_with_stop_times['arrival_time_planned_prev'] = df_exploded_with_stop_times.groupby('trip_id')['arrival_time_planned'].shift(1)
+    df_exploded_with_stop_times['departure_time_planned_prev'] = df_exploded_with_stop_times.groupby('trip_id')['departure_time_planned'].shift(1)
+    df_exploded_with_stop_times['arrival_time_late_prev'] = df_exploded_with_stop_times.groupby('trip_id')['arrival_time_late'].shift(1)
+    df_exploded_with_stop_times['departure_time_late_prev'] = df_exploded_with_stop_times.groupby('trip_id')['departure_time_late'].shift(1)
+
+    print(df_exploded_with_stop_times.dtypes)
+    print(df_exploded_with_stop_times.head(40))
+
+    return df_exploded_with_stop_times
+
+def create_X_Y_df(from_station:str, to_station:str) -> tuple(pd.DataFrame, pd.DataFrame):
+
+    df = make_df_from_stations(from_station, to_station)
+    df_lag = lag_times(df)
+
+    df_X = df_lag["arrival_time_planned"]
