@@ -16,7 +16,7 @@ class Operator(Enum):
     Varm = "varm"
     Orebro = "orebro"
     Vastmanland = "vastmanland"
-    D_T = "dt"
+    DT = "dt"
     XT = "xt"
     Dintur = "dintur"
     Jamtland = "jamtland"
@@ -130,7 +130,7 @@ _AVAILABLE_DATA = {
     Operator.Varm:              {DT.STATIC: True,  DT.REALTIME: True,  DT.VEHICLE_POSITIONS: True,  DT.OCCUPANCY: False},
     Operator.Orebro:            {DT.STATIC: True,  DT.REALTIME: True,  DT.VEHICLE_POSITIONS: True,  DT.OCCUPANCY: False},
     Operator.Vastmanland:       {DT.STATIC: True,  DT.REALTIME: True,  DT.VEHICLE_POSITIONS: True,  DT.OCCUPANCY: False},
-    Operator.D_T:               {DT.STATIC: True,  DT.REALTIME: True,  DT.VEHICLE_POSITIONS: True,  DT.OCCUPANCY: False},
+    Operator.DT:                {DT.STATIC: True,  DT.REALTIME: True,  DT.VEHICLE_POSITIONS: True,  DT.OCCUPANCY: False},
     Operator.XT:                {DT.STATIC: True,  DT.REALTIME: True,  DT.VEHICLE_POSITIONS: True,  DT.OCCUPANCY: False},
     Operator.Dintur:            {DT.STATIC: True,  DT.REALTIME: True,  DT.VEHICLE_POSITIONS: True,  DT.OCCUPANCY: False},
     Operator.Jamtland:          {DT.STATIC: True,  DT.REALTIME: False, DT.VEHICLE_POSITIONS: False, DT.OCCUPANCY: False},

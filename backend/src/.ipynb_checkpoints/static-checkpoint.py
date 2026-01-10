@@ -6,42 +6,22 @@ class StaticData:
     routes: pd.DataFrame
     stop_times: pd.DataFrame
     agencies: pd.DataFrame
-    stops: pd.DataFrame
 
     def __init__(self, trips: pd.DataFrame, routes: pd.DataFrame,
-                 stop_times: pd.DataFrame, agencies: pd.DataFrame, stops:pd.DataFrame):
+                 stop_times: pd.DataFrame, agencies: pd.DataFrame):
         self.trips = trips
         self.routes = routes
         self.stop_times = stop_times
         self.agencies = agencies
-        self.stops = stops
     
-    def save_to_pkl(self, pkl_folder_path:str):
-        self.trips.to_pickle(f"{pkl_folder_path}/trips.pkl")
-        self.routes.to_pickle(f"{pkl_folder_path}/routes.pkl")
-        self.stop_times.to_pickle(f"{pkl_folder_path}/stop_times.pkl")
-        self.agencies.to_pickle(f"{pkl_folder_path}/agencies.pkl")
-        self.stops.to_pickle(f"{pkl_folder_path}/stops.pkl")
-
     @staticmethod
     def load_static_data(folder_path: str, date: datetime.date) -> 'StaticData':
         trips = StaticData.load_trips(f"{folder_path}/trips.txt")
         routes = StaticData.load_routes(f"{folder_path}/routes.txt")
         stop_times = StaticData.load_stop_times(f"{folder_path}/stop_times.txt", date)
         agencies = StaticData.load_agencies(f"{folder_path}/agency.txt")
-        stops = StaticData.load_stops(f"{folder_path}/stops.txt")
 
-        return StaticData(trips, routes, stop_times, agencies, stops)
-
-    @staticmethod
-    def load_from_pkl(pkl_folder_path:str) -> 'StaticData':
-        trips = pd.read_pickle(f"{pkl_folder_path}/trips.pkl")
-        routes = pd.read_pickle(f"{pkl_folder_path}/routes.pkl")
-        stop_times = pd.read_pickle(f"{pkl_folder_path}/stop_times.pkl")
-        agencies = pd.read_pickle(f"{pkl_folder_path}/agencies.pkl")
-        stops = pd.read_pickle(f"{pkl_folder_path}/stops.pkl")
-
-        return StaticData(trips, routes, stop_times, agencies, stops)
+        return StaticData(trips, routes, stop_times, agencies)
 
     @staticmethod
     def load_trips(path: str) -> pd.DataFrame:
@@ -57,20 +37,6 @@ class StaticData:
 
         return trips
 
-    @staticmethod
-    def load_stops(path:str) -> pd.DataFrame:
-        stops = pd.read_csv(path, dtype={
-            "stop_id": pd.StringDtype(),
-            "stop_name": pd.StringDtype(),
-            "stop_lat": pd.Float64Dtype(),
-            "stop_lon": pd.Float64Dtype(),
-            "location_type": "Int64",
-            "parent_station": pd.StringDtype(),
-            "platform_code": pd.StringDtype(),
-        })
-
-        return stops
-    
     @staticmethod
     def load_routes(path: str) -> pd.DataFrame:
         routes = pd.read_csv(path, dtype={
