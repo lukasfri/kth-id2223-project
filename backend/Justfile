@@ -1,2 +1,2 @@
 generate-protoc:
-  protoc --proto_path=src --python_out=src/__generated__ --mypy_out=src/__generated__ src/gtfs-realtime.proto
+  protoc --proto_path=packages/training/src/training --python_out=packages/training/src/training/__generated__ --mypy_out=packages/training/src/training/__generated__ packages/training/src/training/gtfs-realtime.proto
