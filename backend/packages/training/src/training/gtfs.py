@@ -5,7 +5,6 @@ import zipfile
 from training.common import FeedID, Operator
 import training.__generated__.gtfs_realtime_pb2 as gtfs_realtime_pb2
 import requests
-import py7zr
 
 def download_gtfs_static_file(operator: Operator, *, api_key: str, data_dir: str):
     file_name = f"{data_dir}/{operator.value}_gtfs_static.zip"
@@ -131,3 +130,4 @@ def load_gtfs_rt_immediately(operator: Operator, feedId: FeedID, *, api_key: str
     feed = gtfs_realtime_pb2.FeedMessage()
     feed.ParseFromString(response.content)
     return feed
+    

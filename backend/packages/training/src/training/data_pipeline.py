@@ -507,3 +507,26 @@ def create_X_Y_df_with_route(
 
 def get_current_input_data():
     ...
+
+def create_X_from_df(df: pd.DataFrame) -> pd.DataFrame:
+    x_cols = [
+            "arrival_time_planned",
+            "arrival_time_planned_prev",
+            "arrival_time_late_prev",
+            # "temperature_2m_mean",
+            # "precipitation_sum",
+            # "wind_speed_10m_max",
+            # "wind_direction_10m_dominant",
+        ]
+   
+    # Build X only from the relevant columns
+    df_X = df[x_cols].copy()
+
+    # Drop rows only where X_cols are NA (ignore NA in other df cols)
+    mask = df_X.notna().all(axis=1)
+    df_X = df_X.loc[mask].reset_index(drop=True)
+
+    # Time-related columns are already represented as seconds.
+    df_X = df_X.astype("float")
+
+    return df_X
