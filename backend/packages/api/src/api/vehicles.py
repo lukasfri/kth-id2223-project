@@ -1,7 +1,7 @@
 
 # Singleton to hold global state
 import asyncio
-from datetime import date
+from datetime import date, datetime
 import os
 from fastapi import APIRouter, FastAPI
 from fastapi.concurrency import asynccontextmanager
@@ -91,6 +91,9 @@ class Vehicle(BaseModel):
     id: str
     position: VehiclePosition
     trip_id: str
+    next_stop_id: str
+    next_stop_scheduled_arrival_time: float
+    next_stop_estimated_arrival_time: float
 
 def bus_row_to_vehicle(row) -> Vehicle:
     return Vehicle(
@@ -102,7 +105,10 @@ def bus_row_to_vehicle(row) -> Vehicle:
             bearing=row["vehicle_bearing"],
             speed=row["vehicle_speed"],
             odometer=row["vehicle_odometer"],
-        )
+        ),
+        next_stop_id="NONE",
+        next_stop_scheduled_arrival_time=datetime.now().timestamp(),
+        next_stop_estimated_arrival_time=datetime.now().timestamp(),
     )
 
 @router.get("/vehicles/{route_short_name}")

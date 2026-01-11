@@ -87,6 +87,12 @@ export interface components {
             position: components["schemas"]["VehiclePosition"];
             /** Trip Id */
             trip_id: string;
+            /** Next Stop Id */
+            next_stop_id: string;
+            /** Next Stop Scheduled Arrival Time */
+            next_stop_scheduled_arrival_time: number;
+            /** Next Stop Estimated Arrival Time */
+            next_stop_estimated_arrival_time: number;
         };
         /** VehiclePosition */
         VehiclePosition: {
