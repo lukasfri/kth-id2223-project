@@ -136,7 +136,7 @@ def create_X_Y_df(from_station:str, to_station:str, start_date:date, end_date:da
         "arrival_time_planned",
         "arrival_time_planned_prev",
         "arrival_time_late_prev",
-        "stop_id",
+        # "stop_id",
     ]
     y_col = "arrival_time_late"
 
@@ -168,8 +168,8 @@ def create_X_Y_df(from_station:str, to_station:str, start_date:date, end_date:da
         df_X[col] = df_X[col].dt.total_seconds()
 
     df_y = pd.to_timedelta(df_y).dt.total_seconds()
-
-    df_X["stop_id"] = df_X["stop_id"].astype("category")
-    df_X = pd.get_dummies(df_X, columns=["stop_id"], prefix="stop_id", dummy_na=False)
-
+    #
+    # df_X["stop_id"] = df_X["stop_id"].astype("category")
+    # df_X = pd.get_dummies(df_X, columns=["stop_id"], prefix="stop_id", dummy_na=False)
+    #
     return df_X, df_y

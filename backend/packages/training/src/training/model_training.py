@@ -28,4 +28,4 @@ def load_model(from_station:str, to_station:str) -> XGBRegressor:
     model.load_model(f"{root_dir}/models/{from_station}_{to_station}_xgb_model.json")
     return model
 
-train_and_save_model("Bergshamra", "Kungshamra", date(2024,6,15), date(2024,6,21), date(2024,6,22), date(2024,6,22))
+train_and_save_model("Bergshamra", "Kungshamra", date(2024,6,15), date(2024,6,17), date(2024,6,22), date(2024,6,22))
