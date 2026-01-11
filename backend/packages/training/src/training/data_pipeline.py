@@ -46,7 +46,7 @@ def download_data_in_range(start_date: date, end_date: date):
 def _load_and_filter_rt_file(path: str, station_ids: set[str]) -> pd.DataFrame:
     """Load one real-time protobuf file and filter to relevant station_ids."""
     feed_message = load_pb_file(path)
-    df_tmp = feed_message_to_dataframe(feed_message)
+    df_tmp = feed_message_to_trip_update_dataframe(feed_message)
 
     mask = df_tmp["stop_time_updates"].apply(
         lambda stus: any(stu["stop_id"] in station_ids for stu in stus)
