@@ -1,6 +1,6 @@
 import os
 from datetime import datetime, timezone
-from email.utils import format_datetime
+from email.utils import formatdate
 import zipfile
 from training.common import FeedID, Operator
 import training.__generated__.gtfs_realtime_pb2 as gtfs_realtime_pb2
@@ -38,10 +38,11 @@ def download_gtfs_static_file_with_if_mod(operator: "Operator", *, api_key: str,
 
     headers: dict[str, str] = {}
 
+   
     if os.path.exists(file_name):
-        # Use the local file's modification time for conditional GET
+        # Use local file mtime for HTTP If-Modified-Since (IMF-fixdate format)
         mtime = os.path.getmtime(file_name)
-        last_modified = format_datetime(datetime.fromtimestamp(mtime, tz=timezone.utc))
+        last_modified = formatdate(timeval=mtime, usegmt=True)  # ex "Mon, 13 Jul 2020 04:24:36 GMT"
         headers["If-Modified-Since"] = last_modified
         print(f"File {file_name} exists. Sending If-Modified-Since: {last_modified}")
     else:
@@ -81,9 +82,9 @@ def download_gtfs_rt_file(
     headers: dict[str, str] = {}
 
     if os.path.exists(file_name):
-        # Use the local file's modification time for conditional GET
+        # Use local file mtime for HTTP If-Modified-Since (IMF-fixdate format)
         mtime = os.path.getmtime(file_name)
-        last_modified = format_datetime(datetime.fromtimestamp(mtime, tz=timezone.utc))
+        last_modified = formatdate(timeval=mtime, usegmt=True)  # ex "Mon, 13 Jul 2020 04:24:36 GMT"
         headers["If-Modified-Since"] = last_modified
         print(f"File {file_name} exists. Sending If-Modified-Since: {last_modified}")
     else:

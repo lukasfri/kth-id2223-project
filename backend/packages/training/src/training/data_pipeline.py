@@ -17,7 +17,7 @@ from training.koda import download_koda_rt_file, download_koda_static_file
 
 def download_data_in_range(start_date: date, end_date: date):
     d = start_date
-    api_key = os.environ.get("API_KEY", "")
+    api_key = os.environ.get("KODA_API_KEY", "")
     root_dir = os.environ.get("ROOT_DIR", ".")
     data_dir = f"{root_dir}/data"
     while d <= end_date:  # <= makes it inclusive
