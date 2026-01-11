@@ -13,8 +13,10 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <h1>Vite + React</h1>
+      <div className='w-screen h-screen'>
       <MapComponent />
+
+      </div>
     </QueryClientProvider>
   )
 }

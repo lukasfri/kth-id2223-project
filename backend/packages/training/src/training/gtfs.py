@@ -1,11 +1,11 @@
 import os
 from datetime import datetime, timezone
 from email.utils import format_datetime
-from common import FeedID, Operator
-import __generated__.gtfs_realtime_pb2 as gtfs_realtime_pb2
+import zipfile
+from training.common import FeedID, Operator
+import training.__generated__.gtfs_realtime_pb2 as gtfs_realtime_pb2
 import requests
 import py7zr
-
 
 def download_gtfs_static_file(operator: Operator, *, api_key: str, data_dir: str):
     file_name = f"{data_dir}/{operator.value}_gtfs_static.zip"
@@ -25,6 +25,11 @@ def download_gtfs_static_file(operator: Operator, *, api_key: str, data_dir: str
 
     with open(file_name, "wb") as f:
         f.write(response.content)
+    
+    print(f"Extracting {file_name}...")
+    
+    with zipfile.ZipFile(file_name, 'r') as zip_ref:
+        zip_ref.extractall(f"{data_dir}/data-tmp")
 
 
 def download_gtfs_rt_file(
@@ -72,4 +77,17 @@ def load_pb_file(file_path: str) -> gtfs_realtime_pb2.FeedMessage:
 
     feed = gtfs_realtime_pb2.FeedMessage()
     feed.ParseFromString(data)
+    return feed
+
+def load_gtfs_rt_immediately(operator: Operator, feedId: FeedID, *, api_key: str) -> gtfs_realtime_pb2.FeedMessage:
+    url = f"https://opendata.samtrafiken.se/gtfs-rt/{operator.value}/{feedId.value}.pb?key={api_key}"
+
+    print(f"Downloading {url}...")
+    response = requests.get(url)
+
+    if response.status_code != 200:
+        raise Exception(f"Failed to download file: {response.status_code} {response.text}")
+    
+    feed = gtfs_realtime_pb2.FeedMessage()
+    feed.ParseFromString(response.content)
     return feed

@@ -1,11 +1,44 @@
 import pandas as pd
 
-from __generated__ import gtfs_realtime_pb2
+from training.__generated__ import gtfs_realtime_pb2 as gtfs_rt
 from training.static_data import StaticData
 
 
-def feed_entity_to_dict(
-    feed_message: gtfs_realtime_pb2.FeedMessage, entity: gtfs_realtime_pb2.FeedEntity
+def feed_entity_to_vehicle_position_dict(
+    feed_message: gtfs_rt.FeedMessage, entity: gtfs_rt.FeedEntity) -> dict:
+    return {
+        "id": entity.id,
+        "trip_id": entity.vehicle.trip.trip_id,
+        "timestamp": feed_message.header.timestamp,
+        "vehicle_latitude": entity.vehicle.position.latitude,
+        "vehicle_longitude": entity.vehicle.position.longitude,
+        "vehicle_bearing": entity.vehicle.position.bearing,
+        "vehicle_odometer": entity.vehicle.position.odometer,
+        "vehicle_speed": entity.vehicle.position.speed,
+        "vehicle_congestion_level": entity.vehicle.congestion_level,
+        "vehicle_occupancy_percentage": entity.vehicle.occupancy_percentage,
+        "vehicle_occupancy_status": entity.vehicle.occupancy_status,
+        "stop_id": entity.vehicle.stop_id,
+        "current_status": entity.vehicle.current_status,
+        "current_stop_sequence": entity.vehicle.current_stop_sequence,
+    }
+
+def feed_message_to_vehicle_position_dataframe(feed_message: gtfs_rt.FeedMessage) -> pd.DataFrame:
+    # VehicleStopStatus = gtfs_rt.VehiclePosition.VehicleStopStatus
+    # vehicle_stop_type = pd.CategoricalDtype([
+    #     VehicleStopStatus.INCOMING_AT,
+    #     VehicleStopStatus.STOPPED_AT,
+    #     VehicleStopStatus.IN_TRANSIT_TO,
+    # ])
+        
+    df = pd.DataFrame([feed_entity_to_vehicle_position_dict(feed_message, e) for e in feed_message.entity])
+
+    df["id"] = df["id"].astype(pd.Int64Dtype())
+    df["trip_id"] = df["trip_id"].replace("", pd.NA).astype(pd.StringDtype())
+
+    return df
+
+def feed_entity_to_trip_update_dict(feed_message: gtfs_rt.FeedMessage, entity: gtfs_rt.FeedEntity
 ) -> dict:
     return {
         "id": entity.id,
@@ -29,11 +62,11 @@ def feed_entity_to_dict(
     }
 
 
-def feed_message_to_dataframe(
-    feed_message: gtfs_realtime_pb2.FeedMessage,
+def feed_message_to_trip_update_dataframe(
+    feed_message: gtfs_rt.FeedMessage,
 ) -> pd.DataFrame:
     df = pd.DataFrame(
-        [feed_entity_to_dict(feed_message, e) for e in feed_message.entity]
+        [feed_entity_to_trip_update_dict(feed_message, e) for e in feed_message.entity]
     )
 
     df["id"] = df["id"].astype(pd.Int64Dtype())
@@ -43,7 +76,13 @@ def feed_message_to_dataframe(
     return df
 
 
-def join_static_data_on_rt(
+def join_static_data_on_rt_vehicle_positions(static_data: StaticData, gtfs_feed_df: pd.DataFrame) -> pd.DataFrame:
+    gtfs_feed_df = gtfs_feed_df.join(static_data.trips, on="trip_id", how="left", rsuffix="_trip")
+    gtfs_feed_df = gtfs_feed_df.join(static_data.routes, on="route_id", how="left", rsuffix="_route")
+  
+    return gtfs_feed_df
+
+def join_static_data_on_rt_trip_updates(
     static_data: StaticData, gtfs_feed_df: pd.DataFrame
 ) -> pd.DataFrame:
     gtfs_feed_df = gtfs_feed_df.join(

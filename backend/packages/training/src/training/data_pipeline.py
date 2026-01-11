@@ -9,10 +9,10 @@ import requests_cache
 from retry_requests import retry
 
 from training.static_data import StaticData
-from data_processing import *
-from common import *
-from gtfs import load_pb_file
-from koda import download_koda_rt_file, download_koda_static_file
+from training.data_processing import *
+from training.common import *
+from training.gtfs import load_pb_file
+from training.koda import download_koda_rt_file, download_koda_static_file
 
 
 def download_data_in_range(start_date: date, end_date: date):
@@ -149,7 +149,7 @@ def make_df_from_stations(
         else:
             df_rt = pd.DataFrame()
 
-    rt_joined_static_df = join_static_data_on_rt(static_data, df_rt)
+    rt_joined_static_df = join_static_data_on_rt_trip_updates(static_data, df_rt)
 
     # print(rt_joined_static_df.head())
 

@@ -89,10 +89,10 @@ class StaticData:
         routes = pd.read_csv(
             path,
             dtype={
-                "agency_id": pd.StringDtype,
-                "route_short_name": pd.StringDtype,
-                "route_long_name": pd.StringDtype,
-                "route_desc": pd.StringDtype,
+                "agency_id": pd.StringDtype(),
+                "route_short_name": pd.StringDtype(),
+                "route_long_name": pd.StringDtype(),
+                "route_desc": pd.StringDtype(),
                 "route_type": "Int64",
             },
         )

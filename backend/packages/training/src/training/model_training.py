@@ -5,7 +5,7 @@ from xgboost import XGBRegressor
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
-from data_pipeline import create_X_Y_df
+from training.data_pipeline import create_X_Y_df
 
 def train_and_save_model(from_station:str, to_station:str, start_date:date, end_date:date, test_start_date:date, test_end_date:date):
     x_train, y_train = create_X_Y_df(from_station, to_station, start_date, end_date)
