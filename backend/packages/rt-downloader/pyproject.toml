@@ -1,0 +1,22 @@
+[project]
+name = "rt-downloader"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Lukas Friman", email = "lukas@dreamplay.net" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "training",
+]
+
+[project.scripts]
+rt-downloader = "rt_downloader:main"
+
+[build-system]
+requires = ["uv_build>=0.9.17,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+training = { workspace = true }

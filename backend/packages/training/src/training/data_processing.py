@@ -38,12 +38,12 @@ def feed_message_to_vehicle_position_dataframe(feed_message: gtfs_rt.FeedMessage
 
     return df
 
-def feed_entity_to_trip_update_dict(feed_message: gtfs_rt.FeedMessage, entity: gtfs_rt.FeedEntity
-) -> dict:
+def feed_entity_to_trip_update_dict(feed_message: gtfs_rt.FeedMessage, entity: gtfs_rt.FeedEntity) -> dict:
     return {
         "id": entity.id,
         "trip_id": entity.trip_update.trip.trip_id,
-        "start_date": entity.trip_update.trip.start_date,
+        # 20240615
+        "start_date": pd.to_datetime(entity.trip_update.trip.start_date, format="%Y%m%d"),
         "schedule_relationship": entity.trip_update.trip.schedule_relationship,
         "vehicle_id": entity.trip_update.vehicle.id,
         "stop_time_updates": [
@@ -112,14 +112,14 @@ def explode_to_stops_with_join_static(
     # Raw GTFS-RT times are Unix epoch seconds or None
     df_exploded["arrival_time"] = (
         df_exploded["stop_time_updates"]
-        .apply(lambda x: x["arrival_time"])
-        .astype("Int64")
+        .apply(lambda x: pd.Timestamp( x["arrival_time"], unit="s"))
     )
     df_exploded["departure_time"] = (
         df_exploded["stop_time_updates"]
-        .apply(lambda x: x["departure_time"])
-        .astype("Int64")
+        .apply(lambda x: pd.Timestamp( x["departure_time"], unit="s"))
     )
+
+    print(df_exploded["arrival_time"].dtype)
 
     df_exploded["stop_time_schedule_relationship"] = df_exploded[
         "stop_time_updates"
@@ -132,22 +132,6 @@ def explode_to_stops_with_join_static(
         .astype(pd.StringDtype())
     )
 
-    # Convert RT times to seconds since service-day midnight
-    timezone_offset = pd.Timedelta(hours=-2)
-    service_date = pd.to_datetime(
-        df_exploded["start_date"], format="%Y%m%d", errors="coerce"
-    )
-    service_midnight = service_date + timezone_offset
-
-    def to_service_seconds(epoch_series: pd.Series) -> pd.Series:
-        # epoch_series is Int64 seconds since Unix epoch; <NA> is allowed
-        dt = pd.to_datetime(epoch_series, unit="s", errors="coerce", cache=False)
-        seconds = (dt - service_midnight).dt.total_seconds()
-        return seconds.round().astype("Int64")
-
-    df_exploded["arrival_time"] = to_service_seconds(df_exploded["arrival_time"])
-    df_exploded["departure_time"] = to_service_seconds(df_exploded["departure_time"])
-
     df_exploded = df_exploded.set_index(["trip_id", "stop_sequence"])
 
     df_exploded_with_stop_times = df_exploded.join(
@@ -156,7 +140,12 @@ def explode_to_stops_with_join_static(
         how="left",
         rsuffix="_planned",
     )
-    
+    df_exploded_with_stop_times["arrival_time_planned"] = df_exploded_with_stop_times["start_date"] + df_exploded_with_stop_times["arrival_time_seconds_since_midnight"]
+    df_exploded_with_stop_times["departure_time_planned"] = df_exploded_with_stop_times["start_date"] + df_exploded_with_stop_times["departure_time_seconds_since_midnight"]
+
+    # Add 2 hours for timezone offset (UTC+2 for Sweden in summer time)
+    df_exploded_with_stop_times["arrival_time_planned"] = df_exploded_with_stop_times["arrival_time_planned"] - pd.Timedelta(hours=2)
+    df_exploded_with_stop_times["departure_time_planned"] = df_exploded_with_stop_times["departure_time_planned"] - pd.Timedelta(hours=2)
 
     def _normalize_late_seconds(diff: pd.Series) -> pd.Series:
         """
@@ -169,28 +158,13 @@ def explode_to_stops_with_join_static(
         diff_wrapped = ((diff_float + 43200) % 86400) - 43200
         return diff_wrapped.round().astype("Int64")
 
-    arrival_diff = (
+    df_exploded_with_stop_times["arrival_time_late"] = (
         df_exploded_with_stop_times["arrival_time"]
         - df_exploded_with_stop_times["arrival_time_planned"]
     )
-    departure_diff = (
+    df_exploded_with_stop_times["departure_time_late"] = (
         df_exploded_with_stop_times["departure_time"]
         - df_exploded_with_stop_times["departure_time_planned"]
     )
-    df_exploded_with_stop_times["arrival_time_late"] = _normalize_late_seconds(
-        arrival_diff
-    )
-    df_exploded_with_stop_times["departure_time_late"] = _normalize_late_seconds(
-        departure_diff
-    )
-
-    # df_exploded_with_stop_times["arrival_time_late"] = (
-    #     df_exploded_with_stop_times["arrival_time"]
-    #     - df_exploded_with_stop_times["arrival_time_planned"]
-    # ).astype("Int64")
-    # df_exploded_with_stop_times["departure_time_late"] = (
-    #     df_exploded_with_stop_times["departure_time"]
-    #     - df_exploded_with_stop_times["departure_time_planned"]
-    # ).astype("Int64")
 
     return df_exploded_with_stop_times

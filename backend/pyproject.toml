@@ -8,11 +8,7 @@ authors = [
     { name = "Georges Tohme", email = "tohme@kth.se" },
 ]
 requires-python = ">=3.12"
-dependencies = [
-    "pandas>=2.3.3",
-    "py7zr>=1.0.0",
-    "scikit-learn>=1.8.0",
-]
+dependencies = ["pandas>=2.3.3", "py7zr>=1.0.0", "scikit-learn>=1.8.0"]
 
 [tool.uv.workspace]
 members = ["packages/*"]
