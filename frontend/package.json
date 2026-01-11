@@ -7,9 +7,13 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate:openapi": "npx openapi-typescript http://localhost:8000/openapi.json -o src/api/types.ts"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.90.16",
+    "@vis.gl/react-maplibre": "^8.1.0",
+    "maplibre-gl": "^5.15.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
@@ -24,6 +28,8 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "openapi-fetch": "^0.15.0",
+    "openapi-react-query": "^0.5.1",
     "tailwindcss": "^4.1.18",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",

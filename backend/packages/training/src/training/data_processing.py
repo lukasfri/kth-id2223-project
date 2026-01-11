@@ -1,7 +1,7 @@
 import pandas as pd
 
 from __generated__ import gtfs_realtime_pb2
-from static import StaticData
+from training.static_data import StaticData
 
 def feed_entity_to_dict(feed_message: gtfs_realtime_pb2.FeedMessage, entity: gtfs_realtime_pb2.FeedEntity) -> dict:
     return {

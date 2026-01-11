@@ -4,7 +4,7 @@ import os
 
 import pandas as pd
 
-from static import StaticData
+from training.static_data import StaticData
 from data_processing import *
 from common import *
 from gtfs import load_pb_file

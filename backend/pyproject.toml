@@ -14,4 +14,4 @@ dependencies = [
 ]
 
 [tool.uv.workspace]
-members = ["packages/training"]
+members = ["packages/*"]

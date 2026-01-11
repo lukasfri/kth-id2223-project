@@ -1,6 +1,6 @@
 import datetime
 import pandas as pd
-import __generated__.gtfs_realtime_pb2 as gtfs_rt
+import training.__generated__.gtfs_realtime_pb2 as gtfs_rt
 
 class StaticData:
     trips: pd.DataFrame
@@ -47,9 +47,9 @@ class StaticData:
     @staticmethod
     def load_trips(path: str) -> pd.DataFrame:
         trips = pd.read_csv(path, dtype={
-            "trip_id": pd.StringDtype,
-            "route_id": pd.StringDtype,
-            "trip_headsign": pd.StringDtype,
+            "trip_id": pd.StringDtype(),
+            "route_id": pd.StringDtype(),
+            "trip_headsign": pd.StringDtype(),
             "service_id": "Int64",
             "shape_id": "Int64",
         })
