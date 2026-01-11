@@ -48,29 +48,41 @@ def make_df_from_stations(from_station:str, to_station:str, start_date:date, end
     # print(station_df.head())
 
     station_ids:set[str] = set(station_df["stop_id"])
-    
-    # TODO: Find better way
-    rt_data_dir = f"{root_dir}/data/data-tmp-rt/sl/TripUpdates/{start_date.year:04d}/{start_date.month:02d}/{start_date.day:02d}"
-    
-    if not os.path.exists(rt_data_dir):
-        raise Exception(f"No path to data: {rt_data_dir}")
 
-    dirs_in_rt_dir = os.listdir(rt_data_dir)
-
+    base_dir = os.path.join(root_dir, "data", "data-tmp-rt", "sl", "TripUpdates")
+    day = start_date
     df_rt = pd.DataFrame()
-    for d in dirs_in_rt_dir:
-        files_in_rt_dir = os.listdir(os.path.join(rt_data_dir, d))
-        for f in files_in_rt_dir:
-            feed_message = load_pb_file(str(os.path.join(rt_data_dir, d, f)))
-            df_tmp = feed_message_to_dataframe(feed_message)
-            mask = df_tmp["stop_time_updates"].apply(
-                lambda stus: any(stu["stop_id"] in station_ids for stu in stus)
-            )
-            df_tmp = df_tmp[mask]
-            if df_rt.empty:
-                df_rt = df_tmp
-            else:
-                df_rt = pd.concat([df_rt, df_tmp])
+
+    while day <= end_date:
+        rt_data_dir = os.path.join(
+            base_dir, f"{day.year:04d}", f"{day.month:02d}", f"{day.day:02d}"
+        )
+
+    
+        if not os.path.exists(rt_data_dir):
+            raise Exception(f"No path to data: {rt_data_dir}")
+
+        dirs_in_rt_dir = os.listdir(rt_data_dir)
+
+        for d in dirs_in_rt_dir:
+            files_in_rt_dir = os.listdir(os.path.join(rt_data_dir, d))
+            for f in files_in_rt_dir:
+
+                feed_message = load_pb_file(str(os.path.join(rt_data_dir, d, f)))
+                df_tmp = feed_message_to_dataframe(feed_message)
+
+                mask = df_tmp["stop_time_updates"].apply(
+                    lambda stus: any(stu["stop_id"] in station_ids for stu in stus)
+                )
+
+                df_tmp = df_tmp[mask]
+
+                if df_rt.empty:
+                    df_rt = df_tmp
+                else:
+                    df_rt = pd.concat([df_rt, df_tmp])
+
+        day += timedelta(days=1)
     
     rt_joined_static_df = join_static_data_on_rt(static_data, df_rt)
 
@@ -142,10 +154,14 @@ def create_X_Y_df(from_station:str, to_station:str, start_date:date, end_date:da
     for col in datetime_cols:
         # Ensure datetime dtype
         df_X[col] = pd.to_datetime(df_X[col])
-
-        # Convert to unix timestamp (seconds since epoch)
-        df_X[col] = df_X[col].astype("int64") / 1e9
-
+        
+        # Convert to seconds since 00:00
+        df_X[col] = (
+            df_X[col].dt.hour * 3600
+            + df_X[col].dt.minute * 60
+            + df_X[col].dt.second
+        )
+        
     timedelta_cols = ["arrival_time_late_prev"]
     for col in timedelta_cols:
         df_X[col] = pd.to_timedelta(df_X[col])
