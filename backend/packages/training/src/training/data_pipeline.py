@@ -272,40 +272,40 @@ def create_X_Y_df(
     df_lag = df_lag[df_lag["stop_id"].isin(station_ids)]
 
     # Fetch historical weather for the same date range
-    latitude = float(os.environ.get("WEATHER_LATITUDE", "59.3293"))
-    longitude = float(os.environ.get("WEATHER_LONGITUDE", "18.0686"))
-
-    df_weather = get_historical_weather(
-        latitude=latitude,
-        longitude=longitude,
-        start_date=start_date,
-        end_date=end_date,
-    )
-
-    weather_available = not df_weather.empty
-    if weather_available:
-        df_weather["date"] = pd.to_datetime(df_weather["date"]).dt.date
-        df_lag["service_date"] = pd.to_datetime(
-            df_lag["start_date"], format="%Y%m%d", errors="coerce"
-        ).dt.date
-
-        df_lag = df_lag.merge(
-            df_weather,
-            left_on="service_date",
-            right_on="date",
-            how="left",
-        )
-    else:
-        raise Exception("Could not get weather")
+    # latitude = float(os.environ.get("WEATHER_LATITUDE", "59.3293"))
+    # longitude = float(os.environ.get("WEATHER_LONGITUDE", "18.0686"))
+    #
+    # df_weather = get_historical_weather(
+    #     latitude=latitude,
+    #     longitude=longitude,
+    #     start_date=start_date,
+    #     end_date=end_date,
+    # )
+    #
+    # weather_available = not df_weather.empty
+    # if weather_available:
+    #     df_weather["date"] = pd.to_datetime(df_weather["date"]).dt.date
+    #     df_lag["service_date"] = pd.to_datetime(
+    #         df_lag["start_date"], format="%Y%m%d", errors="coerce"
+    #     ).dt.date
+    #
+    #     df_lag = df_lag.merge(
+    #         df_weather,
+    #         left_on="service_date",
+    #         right_on="date",
+    #         how="left",
+    #     )
+    # else:
+    #     raise Exception("Could not get weather")
 
     x_cols = [
             "arrival_time_planned",
             "arrival_time_planned_prev",
             "arrival_time_late_prev",
-            "temperature_2m_mean",
-            "precipitation_sum",
-            "wind_speed_10m_max",
-            "wind_direction_10m_dominant",
+            # "temperature_2m_mean",
+            # "precipitation_sum",
+            # "wind_speed_10m_max",
+            # "wind_direction_10m_dominant",
         ]
    
     y_col = "arrival_time_late"
