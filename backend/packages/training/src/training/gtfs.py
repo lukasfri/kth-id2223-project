@@ -31,7 +31,47 @@ def download_gtfs_static_file(operator: Operator, *, api_key: str, data_dir: str
     with zipfile.ZipFile(file_name, 'r') as zip_ref:
         zip_ref.extractall(f"{data_dir}/data-tmp")
 
+def download_gtfs_static_file_with_if_mod(operator: "Operator", *, api_key: str, data_dir: str):
+    file_name = f"{data_dir}/{operator.value}_gtfs_static.zip"
+    url = f"https://opendata.samtrafiken.se/gtfs/{operator.value}/{operator.value}.zip?key={api_key}"
 
+    os.makedirs(data_dir, exist_ok=True)
+
+    headers: dict[str, str] = {}
+
+    if os.path.exists(file_name):
+        # Use the local file's modification time for conditional GET
+        mtime = os.path.getmtime(file_name)
+        last_modified = format_datetime(datetime.fromtimestamp(mtime, tz=timezone.utc))
+        headers["If-Modified-Since"] = last_modified
+        print(f"File {file_name} exists. Sending If-Modified-Since: {last_modified}")
+    else:
+        print(f"No existing file found. Downloading {url} without If-Modified-Since...")
+
+    response = requests.get(url, headers=headers)
+
+    if response.status_code == 304:
+        print(
+            f"GTFS static for {operator.value} not modified. Using existing file {file_name}."
+        )
+        return
+
+    elif response.status_code == 200:
+        with open(file_name, "wb") as f:
+            f.write(response.content)
+        print(f"Downloaded and saved GTFS static zip to {file_name}.")
+
+    else:
+        raise Exception(
+            f"Failed to download file: {response.status_code} {response.text}"
+        )
+
+
+    with zipfile.ZipFile(file_name, 'r') as zip_ref:
+        zip_ref.extractall(f"{data_dir}/data-tmp")
+
+    return
+    
 def download_gtfs_rt_file(
     operator: Operator, feedId: FeedID, *, api_key: str, data_dir: str
 ):

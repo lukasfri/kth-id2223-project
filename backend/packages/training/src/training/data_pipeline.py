@@ -55,6 +55,122 @@ def _load_and_filter_rt_file(path: str, station_ids: set[str]) -> pd.DataFrame:
 
     return df_tmp
 
+def _load_and_filter_rt_file_with_trip_id(path: str, trip_ids: set[str]) -> pd.DataFrame:
+    """Load one real-time protobuf file and filter to relevant trip_ids."""
+    feed_message = load_pb_file(path)
+    df_tmp = feed_message_to_trip_update_dataframe(feed_message)
+
+    # Filter to only wanted trip_ids
+    df_tmp = df_tmp[df_tmp["trip_id"].isin(trip_ids)]
+
+    return df_tmp
+
+
+def make_df_from_route_id(route_id:str, start_date: date, end_date: date
+) -> pd.DataFrame:
+    dateStr = os.environ.get("STATIC_DATA_DATE", "2024-06-15")
+    dateOfStatic = datetime.strptime(dateStr, "%Y-%m-%d").date()
+
+    root_dir = os.environ.get("ROOT_DIR", ".")
+    static_data: StaticData
+    if os.path.exists(f"{root_dir}/data/data-tmp/static_pkl/trips.pkl"):
+        print("Using pickled static data")
+        static_data = StaticData.load_from_pkl(f"{root_dir}/data/data-tmp/static_pkl")
+    else:
+        static_data = StaticData.load_static_data(f"{root_dir}/data/data-tmp")
+        static_data.save_to_pkl(f"{root_dir}/data/data-tmp/static_pkl")
+
+    # print(static_data.stops.head())
+    trip_ids_set = set(static_data.trips.loc[static_data.trips["route_id"] == route_id].index.dropna())
+    #station_df = static_data.stops[static_data.stops["stop_name"].isin(station_targets)]
+
+    print("Number of trips", len(trip_ids_set))
+
+    #station_ids: set[str] = set(station_df["stop_id"])
+
+    base_dir = os.path.join(root_dir, "data", "data-tmp-rt", "sl", "TripUpdates")
+
+    # 1) Discover all files in a canonical (sorted) order
+    day = start_date
+    rt_file_paths: list[str] = []
+
+    while day <= end_date:
+        rt_data_dir = os.path.join(
+            base_dir, f"{day.year:04d}", f"{day.month:02d}", f"{day.day:02d}"
+        )
+        print("Reading data from date:", day)
+
+        if not os.path.exists(rt_data_dir):
+            raise Exception(f"No path to data: {rt_data_dir}")
+
+        # Sort hour directories and files for deterministic behavior.
+        for hour_dir in sorted(os.listdir(rt_data_dir)):
+            hour_path = os.path.join(rt_data_dir, hour_dir)
+            if not os.path.isdir(hour_path):
+                continue
+
+            for filename in sorted(os.listdir(hour_path)):
+                file_path = os.path.join(hour_path, filename)
+                if not os.path.isfile(file_path):
+                    continue
+                rt_file_paths.append(file_path)
+
+        day += timedelta(days=1)
+
+    # 2) Process all files concurrently using a ThreadPoolExecutor
+    df_rt = pd.DataFrame()
+    if rt_file_paths:
+        max_workers_env = os.environ.get("RT_READ_WORKERS")
+        if max_workers_env is not None:
+            try:
+                max_workers = int(max_workers_env)
+            except ValueError:
+                max_workers = 8
+        else:
+            max_workers = 8
+
+        results_by_path: dict[str, pd.DataFrame] = {}
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_to_path = {
+                executor.submit(
+                    _load_and_filter_rt_file_with_trip_id,
+                    path,
+                    trip_ids_set,
+                ): path
+                for path in rt_file_paths
+            }
+
+            for future in as_completed(future_to_path):
+                path = future_to_path[future]
+                df_tmp = future.result()
+                if not df_tmp.empty:
+                    results_by_path[path] = df_tmp
+
+        # 3) Rebuild df_rt in the same logical order as rt_file_paths
+        ordered_dfs: list[pd.DataFrame] = []
+        for path in rt_file_paths:
+            df_tmp = results_by_path.get(path)
+            if df_tmp is not None and not df_tmp.empty:
+                ordered_dfs.append(df_tmp)
+
+        if ordered_dfs:
+            df_rt = pd.concat(ordered_dfs)
+        else:
+            df_rt = pd.DataFrame()
+
+    rt_joined_static_df = join_static_data_on_rt_trip_updates(static_data, df_rt)
+
+    # print(rt_joined_static_df.head())
+
+    exploded_df = explode_to_stops_with_join_static(static_data, rt_joined_static_df)
+
+    # print(filtered_exp_df.head())
+
+    return exploded_df
+
+
+
 
 def make_df_from_stations(
     from_station: str, to_station: str, start_date: date, end_date: date
@@ -325,3 +441,69 @@ def create_X_Y_df(
     df_y = df_y.astype("float")
 
     return df_X, df_y
+
+def create_X_Y_df_with_route(
+    route_id: str, start_date: date, end_date: date
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    df = make_df_from_route_id(
+        route_id, start_date, end_date
+    )
+    df_lag = lag_times(df)
+
+    # Fetch historical weather for the same date range
+    # latitude = float(os.environ.get("WEATHER_LATITUDE", "59.3293"))
+    # longitude = float(os.environ.get("WEATHER_LONGITUDE", "18.0686"))
+    #
+    # df_weather = get_historical_weather(
+    #     latitude=latitude,
+    #     longitude=longitude,
+    #     start_date=start_date,
+    #     end_date=end_date,
+    # )
+    #
+    # weather_available = not df_weather.empty
+    # if weather_available:
+    #     df_weather["date"] = pd.to_datetime(df_weather["date"]).dt.date
+    #     df_lag["service_date"] = pd.to_datetime(
+    #         df_lag["start_date"], format="%Y%m%d", errors="coerce"
+    #     ).dt.date
+    #
+    #     df_lag = df_lag.merge(
+    #         df_weather,
+    #         left_on="service_date",
+    #         right_on="date",
+    #         how="left",
+    #     )
+    # else:
+    #     raise Exception("Could not get weather")
+
+    x_cols = [
+            "arrival_time_planned",
+            "arrival_time_planned_prev",
+            "arrival_time_late_prev",
+            # "temperature_2m_mean",
+            # "precipitation_sum",
+            # "wind_speed_10m_max",
+            # "wind_direction_10m_dominant",
+        ]
+   
+    y_col = "arrival_time_late"
+
+    # Build X and y only from the relevant columns
+    df_X = df_lag[x_cols].copy()
+
+    df_y = df_lag[y_col].copy()
+
+    # Drop rows only where X_cols or y_col are NA (ignore NA in other df_lag cols)
+    mask = df_X.notna().all(axis=1) & df_y.notna()
+    df_X = df_X.loc[mask].reset_index(drop=True)
+    df_y = df_y.loc[mask].reset_index(drop=True)
+
+    # Time-related columns are already represented as seconds.
+    df_X = df_X.astype("float")
+    df_y = df_y.astype("float")
+
+    return df_X, df_y
+
+def get_current_input_data():
+    ...
