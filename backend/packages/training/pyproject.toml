@@ -19,6 +19,8 @@ dependencies = [
     "py7zr>=1.0.0",
     "python-dotenv>=1.2.1",
     "requests>=2.32.5",
+    "requests-cache>=1.2.1",
+    "retry-requests>=2.0.0",
     "scikit-learn>=1.8.0",
     "xgboost>=3.1.2",
 ]
