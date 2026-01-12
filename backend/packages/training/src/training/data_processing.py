@@ -112,14 +112,18 @@ def explode_to_stops_with_join_static(
     # Raw GTFS-RT times are Unix epoch seconds or None
     df_exploded["arrival_time"] = (
         df_exploded["stop_time_updates"]
-        .apply(lambda x: pd.Timestamp( x["arrival_time"], unit="s"))
+        .apply(lambda x: pd.Timestamp(x["arrival_time"], unit="s") + pd.Timedelta(hours=1))
+        .astype("datetime64[ns]")
     )
     df_exploded["departure_time"] = (
         df_exploded["stop_time_updates"]
-        .apply(lambda x: pd.Timestamp( x["departure_time"], unit="s"))
+        .apply(lambda x: pd.Timestamp(x["departure_time"], unit="s") + pd.Timedelta(hours=1))
+        .astype("datetime64[ns]")
     )
-
-    print(df_exploded["arrival_time"].dtype)
+    
+    # # Adjust timezone
+    # df_exploded["arrival_time"] =  df_exploded["arrival_time"].map(lambda x: x + pd.Timedelta(hours=1))
+    # df_exploded["departure_time"] = df_exploded["departure_time"].map(lambda x: x + pd.Timedelta(hours=1))
 
     df_exploded["stop_time_schedule_relationship"] = df_exploded[
         "stop_time_updates"
@@ -143,10 +147,6 @@ def explode_to_stops_with_join_static(
     df_exploded_with_stop_times["arrival_time_planned"] = df_exploded_with_stop_times["start_date"] + df_exploded_with_stop_times["arrival_time_seconds_since_midnight"]
     df_exploded_with_stop_times["departure_time_planned"] = df_exploded_with_stop_times["start_date"] + df_exploded_with_stop_times["departure_time_seconds_since_midnight"]
 
-    # Add 2 hours for timezone offset (UTC+2 for Sweden in summer time)
-    df_exploded_with_stop_times["arrival_time_planned"] = df_exploded_with_stop_times["arrival_time_planned"] - pd.Timedelta(hours=2)
-    df_exploded_with_stop_times["departure_time_planned"] = df_exploded_with_stop_times["departure_time_planned"] - pd.Timedelta(hours=2)
-
     def _normalize_late_seconds(diff: pd.Series) -> pd.Series:
         """
         Normalize lateness (in seconds) into a reasonable range by
@@ -157,6 +157,8 @@ def explode_to_stops_with_join_static(
         # Shift by 12h, fold into [0, 24h), then shift back
         diff_wrapped = ((diff_float + 43200) % 86400) - 43200
         return diff_wrapped.round().astype("Int64")
+    
+    print(df_exploded_with_stop_times[["arrival_time", "arrival_time_planned"]].dtypes)
 
     df_exploded_with_stop_times["arrival_time_late"] = (
         df_exploded_with_stop_times["arrival_time"]
