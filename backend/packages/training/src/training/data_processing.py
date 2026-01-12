@@ -158,8 +158,6 @@ def explode_to_stops_with_join_static(
     #     diff_wrapped = ((diff_float + 43200) % 86400) - 43200
     #     return diff_wrapped.round().astype("Int64")
     
-    print(df_exploded_with_stop_times[["arrival_time", "arrival_time_planned"]].dtypes)
-
     df_exploded_with_stop_times["arrival_time_late"] = (
         df_exploded_with_stop_times["arrival_time"]
         - df_exploded_with_stop_times["arrival_time_planned"]

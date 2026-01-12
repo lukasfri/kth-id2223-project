@@ -12,8 +12,7 @@ from training.model_training import train_and_save_model, load_model
 
 dotenv.load_dotenv()
 
-import routes
-import vehicles
+from api import routes, vehicles
 
 app = FastAPI(lifespan=vehicles.lifespan)
 

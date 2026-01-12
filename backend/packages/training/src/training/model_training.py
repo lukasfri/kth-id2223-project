@@ -1,6 +1,7 @@
 from math import sqrt
 import os
 from datetime import date
+from typing import Optional
 from xgboost import XGBRegressor
 
 import pandas as pd
@@ -65,16 +66,20 @@ def train_and_save_route_model(route_id:set[str], start_date:date, end_date:date
         
         
 
-def load_model(from_station:str, to_station:str) -> XGBRegressor:
-    root_dir = os.environ.get("ROOT_DIR", ".")
+def load_model(from_station:str, to_station:str, *, model_path: Optional[str] = None) -> XGBRegressor:
+    if model_path is None:
+        root_dir = os.environ.get("ROOT_DIR", ".")
+        model_path = f"{root_dir}/models"
     model = XGBRegressor()
-    model.load_model(f"{root_dir}/models/{from_station}_{to_station}_xgb_model.json")
+    model.load_model(f"{model_path}/{from_station}_{to_station}_xgb_model.json")
     return model
 
-def load_route_model(route_id:str) -> XGBRegressor:
-    root_dir = os.environ.get("ROOT_DIR", ".")
+def load_route_model(route_id: str, *, model_path: Optional[str] = None) -> XGBRegressor:
+    if model_path is None:
+        root_dir = os.environ.get("ROOT_DIR", ".")
+        model_path = f"{root_dir}/models"
     model = XGBRegressor()
-    model.load_model(f"{root_dir}/models/{route_id}_xgb_model.json")
+    model.load_model(f"{model_path}/{route_id}_xgb_model.json")
     return model
 
 # if __name__ == "__main__":
