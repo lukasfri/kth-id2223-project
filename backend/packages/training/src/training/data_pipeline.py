@@ -19,7 +19,7 @@ def download_data_in_range(start_date: date, end_date: date):
     d = start_date
     api_key = os.environ.get("KODA_API_KEY", "")
     root_dir = os.environ.get("ROOT_DIR", ".")
-    data_dir = f"{root_dir}/data"
+    data_dir = f"{root_dir}/data/koda-rt"
     while d <= end_date:  # <= makes it inclusive
         res_code = download_koda_rt_file(
             operator=Operator.SL,
@@ -66,7 +66,7 @@ def _load_and_filter_rt_file_with_trip_id(path: str, trip_ids: set[str]) -> pd.D
     return df_tmp
 
 
-def make_df_from_route_id(route_id:str, start_date: date, end_date: date
+def make_df_from_route_id(route_id:str|set[str], start_date: date, end_date: date
 ) -> pd.DataFrame:
     dateStr = os.environ.get("STATIC_DATA_DATE", "2024-06-15")
     dateOfStatic = datetime.strptime(dateStr, "%Y-%m-%d").date()
@@ -81,7 +81,10 @@ def make_df_from_route_id(route_id:str, start_date: date, end_date: date
         static_data.save_to_pkl(f"{root_dir}/data/data-tmp/static_pkl")
 
     # print(static_data.stops.head())
-    trip_ids_set = set(static_data.trips.loc[static_data.trips["route_id"] == route_id].index.dropna())
+    if isinstance(route_id, str):
+        trip_ids_set = set(static_data.trips.loc[static_data.trips["route_id"] == route_id].index.dropna())
+    elif isinstance(route_id, set):
+        trip_ids_set = set(static_data.trips.loc[static_data.trips["route_id"].isin(route_id)].index.dropna())
     #station_df = static_data.stops[static_data.stops["stop_name"].isin(station_targets)]
 
     print("Number of trips", len(trip_ids_set))
@@ -443,8 +446,9 @@ def create_X_Y_df(
     return df_X, df_y
 
 def create_X_Y_df_with_route(
-    route_id: str, start_date: date, end_date: date
+    route_id: str|set[str], start_date: date, end_date: date
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
+    
     df = make_df_from_route_id(
         route_id, start_date, end_date
     )
@@ -476,11 +480,11 @@ def create_X_Y_df_with_route(
     #     )
     # else:
     #     raise Exception("Could not get weather")
-
     x_cols = [
             "arrival_time_planned",
             "arrival_time_planned_prev",
             "arrival_time_late_prev",
+            "route_id"
             # "temperature_2m_mean",
             # "precipitation_sum",
             # "wind_speed_10m_max",
@@ -494,7 +498,42 @@ def create_X_Y_df_with_route(
 
     df_y = df_lag[y_col].copy()
 
-    # Drop rows only where X_cols or y_col are NA (ignore NA in other df_lag cols)
+
+
+    # --- Conversions ---
+    def datetime_to_seconds_since_midnight(s: pd.Series) -> pd.Series:
+        """
+        Converts datetime-like series to seconds since midnight.
+        Works for pandas Timestamp, python datetime, and strings parseable by pd.to_datetime.
+        """
+        dt = pd.to_datetime(s, errors="coerce")
+        return (
+            dt.dt.hour.astype("float")
+            * 3600
+            + dt.dt.minute.astype("float") * 60
+            + dt.dt.second.astype("float")
+        )
+
+    def timedelta_to_seconds(s: pd.Series) -> pd.Series:
+        """
+        Converts timedelta-like series to total seconds.
+        Works for pandas Timedelta, python timedelta, and strings parseable by pd.to_timedelta.
+        """
+        td = pd.to_timedelta(s, errors="coerce")
+        return td.dt.total_seconds().astype("float")
+
+    # Convert planned arrival timestamps -> seconds since midnight
+    for col in ["arrival_time_planned", "arrival_time_planned_prev"]:
+        if col in df_X.columns:
+            df_X[col] = datetime_to_seconds_since_midnight(df_X[col])
+
+    # Convert late times -> seconds
+    if "arrival_time_late_prev" in df_X.columns:
+        df_X["arrival_time_late_prev"] = timedelta_to_seconds(df_X["arrival_time_late_prev"])
+
+    df_y[y_col] = timedelta_to_seconds(df_y[y_col])
+
+        # Drop rows only where X_cols or y_col are NA (ignore NA in other df_lag cols)
     mask = df_X.notna().all(axis=1) & df_y.notna()
     df_X = df_X.loc[mask].reset_index(drop=True)
     df_y = df_y.loc[mask].reset_index(drop=True)
@@ -505,10 +544,8 @@ def create_X_Y_df_with_route(
 
     return df_X, df_y
 
-def get_current_input_data():
-    ...
-
 def create_X_from_df(df: pd.DataFrame) -> pd.DataFrame:
+
     x_cols = [
             "arrival_time_planned",
             "arrival_time_planned_prev",
@@ -521,6 +558,38 @@ def create_X_from_df(df: pd.DataFrame) -> pd.DataFrame:
    
     # Build X only from the relevant columns
     df_X = df[x_cols].copy()
+    
+    # --- Conversions ---
+    def datetime_to_seconds_since_midnight(s: pd.Series) -> pd.Series:
+        """
+        Converts datetime-like series to seconds since midnight.
+        Works for pandas Timestamp, python datetime, and strings parseable by pd.to_datetime.
+        """
+        dt = pd.to_datetime(s, errors="coerce")
+        return (
+            dt.dt.hour.astype("float")
+            * 3600
+            + dt.dt.minute.astype("float") * 60
+            + dt.dt.second.astype("float")
+        )
+
+    def timedelta_to_seconds(s: pd.Series) -> pd.Series:
+        """
+        Converts timedelta-like series to total seconds.
+        Works for pandas Timedelta, python timedelta, and strings parseable by pd.to_timedelta.
+        """
+        td = pd.to_timedelta(s, errors="coerce")
+        return td.dt.total_seconds().astype("float")
+
+    # Convert planned arrival timestamps -> seconds since midnight
+    for col in ["arrival_time_planned", "arrival_time_planned_prev"]:
+        if col in df_X.columns:
+            df_X[col] = datetime_to_seconds_since_midnight(df_X[col])
+
+    # Convert late times -> seconds
+    if "arrival_time_late_prev" in df_X.columns:
+        df_X["arrival_time_late_prev"] = timedelta_to_seconds(df_X["arrival_time_late_prev"])
+
 
     # Drop rows only where X_cols are NA (ignore NA in other df cols)
     mask = df_X.notna().all(axis=1)
