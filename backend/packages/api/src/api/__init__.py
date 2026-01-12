@@ -19,7 +19,7 @@ app = FastAPI(lifespan=vehicles.lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify your frontend URL
+    allow_origins=["https://id2223.dreamplay.net", "http://localhost:5173"],  # In production, specify your frontend URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

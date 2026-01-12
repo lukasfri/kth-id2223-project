@@ -8,6 +8,8 @@ from fastapi import APIRouter, FastAPI
 from fastapi.concurrency import asynccontextmanager
 import pandas as pd
 from pydantic import BaseModel
+from training.data_pipeline import create_X_from_df, lag_times
+from xgboost import XGBRegressor
 
 from training.common import FeedID, Operator
 from training.gtfs import load_gtfs_rt_immediately, list_gtfs_files , load_gtfs_frame_from_files
@@ -68,8 +70,11 @@ GTFS_RT_API_KEY = os.environ.get("GTFS_REGIONAL_RT_API_KEY", "")
 if GTFS_RT_API_KEY == "":
     raise Exception("GTFS_REGIONAL_RT_API_KEY environment variable not set")
 
+xgb_model = XGBRegressor()
+xgb_model.load_model(f"./models/9011001001300000_xgb_model.json")
+
 def load_gtfs_rt_positions() -> pd.DataFrame:
-    gtfs_feed_message = load_gtfs_rt_immediately(
+    gtfs_vehicle_positions = load_gtfs_rt_immediately(
         operator=Operator.SL, 
         feedId=FeedID.VehiclePositions, 
         api_key= GTFS_RT_API_KEY,
@@ -116,7 +121,7 @@ def bus_row_to_vehicle(row) -> Vehicle:
         ),
         next_stop_id="NONE",
         next_stop_scheduled_arrival_time=datetime.now().timestamp(),
-        next_stop_estimated_arrival_time=datetime.now().timestamp(),
+        next_stop_estimated_arrival_time=row["next_stop_estimated_arrival_time"],
     )
 
 @router.get("/vehicles/{route_short_name}")
