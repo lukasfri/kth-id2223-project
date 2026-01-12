@@ -38,6 +38,7 @@ async def update_buses_loop():
     global df_buses
 
     while True:
+        start_time = datetime.datetime.now()
         try:
             print("Updating vehicle positions...")
             # Run the blocking data loading in a separate thread to keep the event loop responsive
@@ -46,7 +47,10 @@ async def update_buses_loop():
         except Exception as e:
             print(f"Error updating vehicle positions: {e}")
         
-        await asyncio.sleep(15)
+        elapsed = (datetime.datetime.now() - start_time).total_seconds()
+        SLEEP_TIME = 15  # seconds
+        sleep_duration = max(0, SLEEP_TIME - elapsed)
+        await asyncio.sleep(sleep_duration)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
