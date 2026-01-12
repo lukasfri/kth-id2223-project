@@ -77,23 +77,23 @@ def load_route_model(route_id:str) -> XGBRegressor:
     model.load_model(f"{root_dir}/models/{route_id}_xgb_model.json")
     return model
 
-if __name__ == "__main__":
-    STAM_BUSES_ROUTE_ID = { 1: "9011001000100000", 
-                        2: "9011001000200000",
-                        3: "9011001000300000",
-                        4: "9011001000400000"}
-
-    STAM_BUSES_ROUTE_SET = {    "9011001000100000", 
-                                "9011001000200000",
-                                "9011001000300000",
-                                "9011001000400000"}
-
-    print("Starting model training")
-    #for route_id in STAM_BUSES_ROUTE_SET:
-    #    print("training on route: ", route_id)
-    train_and_save_route_model(STAM_BUSES_ROUTE_SET, date(2026,1,5), date(2026,1,5))
-    # train_and_save_model("Bergshamra", "Kungshamra", date(2024,6,15), date(2024,6,17), date(2024,6,18), date(2024,6,18))
-    # dfx, dfy = create_X_Y_df("Bergshamra", "Kungshamra", date(2024,6,15), date(2024,6,16))
-    # print(dfx.dtypes)
-    # print(dfx.head())
-    # dfx.to_csv("tmp.csv")
+# if __name__ == "__main__":
+#     STAM_BUSES_ROUTE_ID = { 1: "9011001000100000", 
+#                         2: "9011001000200000",
+#                         3: "9011001000300000",
+#                         4: "9011001000400000"}
+#
+#     STAM_BUSES_ROUTE_SET = {    "9011001000100000", 
+#                                 "9011001000200000",
+#                                 "9011001000300000",
+#                                 "9011001000400000"}
+#
+#     print("Starting model training")
+#     #for route_id in STAM_BUSES_ROUTE_SET:
+#     #    print("training on route: ", route_id)
+#     train_and_save_route_model(STAM_BUSES_ROUTE_SET, date(2026,1,5), date(2026,1,5))
+#     # train_and_save_model("Bergshamra", "Kungshamra", date(2024,6,15), date(2024,6,17), date(2024,6,18), date(2024,6,18))
+#     # dfx, dfy = create_X_Y_df("Bergshamra", "Kungshamra", date(2024,6,15), date(2024,6,16))
+#     # print(dfx.dtypes)
+#     # print(dfx.head())
+#     # dfx.to_csv("tmp.csv")
