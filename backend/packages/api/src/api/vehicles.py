@@ -2,6 +2,7 @@
 # Singleton to hold global state
 import asyncio
 from datetime import date, datetime
+import datetime
 import os
 from fastapi import APIRouter, FastAPI
 from fastapi.concurrency import asynccontextmanager
@@ -9,7 +10,7 @@ import pandas as pd
 from pydantic import BaseModel
 
 from training.common import FeedID, Operator
-from training.gtfs import load_gtfs_rt_immediately
+from training.gtfs import load_gtfs_rt_immediately, list_gtfs_files , load_gtfs_frame_from_files
 from training.static_data import StaticData
 
 data_folder = f"./data"
@@ -53,7 +54,7 @@ def gtfs_static_data_load():
     try:
         gtfs_static_data = StaticData.load_from_pkl(gtfs_static_path)
     except FileNotFoundError:
-        gtfs_static_data = StaticData.load_static_data(gtfs_static_path, todayDate)
+        gtfs_static_data = StaticData.load_static_data(gtfs_static_path) #,todayDate)
 
         gtfs_static_data.save_to_pkl(gtfs_static_path)
 
@@ -76,6 +77,13 @@ def load_gtfs_rt_positions() -> pd.DataFrame:
 
     df = feed_message_to_vehicle_position_dataframe(gtfs_feed_message)
     df = join_static_data_on_rt_vehicle_positions(gtfs_static_data, df)
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    ten_minute_files = list_gtfs_files(
+        base_path=f"{data_folder}/gtfs-rt/data-tmp/sl/TripUpdates",
+        start_dt=now - datetime.timedelta(minutes=10),
+        end_dt=now
+    )
 
     return df
 
