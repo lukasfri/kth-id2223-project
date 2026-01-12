@@ -29,10 +29,6 @@ def train_and_save_route_model(route_id:set[str], start_date:date, end_date:date
    
     #x_train, x_test, y_train, y_test = train_test_split(df_x, df_y, test_size=0.1)
 
-    # print(type(x_train))
-    # print(type(x_test))
-    # print(type(y_train))
-    # print(type(y_test))
     # print(x_train.dtypes)
     # print(x_train.head())
     # print(x_train.max())
@@ -43,6 +39,11 @@ def train_and_save_route_model(route_id:set[str], start_date:date, end_date:date
         
         df_x, df_y = create_X_Y_df_with_route(r, start_date, end_date)
         x_train, x_test, y_train, y_test = train_test_split(df_x, df_y, test_size=0.15)
+        print(type(x_train))
+        print(type(x_test))
+        print(type(y_train))
+        print(type(y_test))
+
         print("Starting training", r)
         model.fit(x_train, y_train)
         # print(x_test.dtypes)
@@ -51,6 +52,7 @@ def train_and_save_route_model(route_id:set[str], start_date:date, end_date:date
         # print(x_test.min())
 
         y_pred = model.predict(x_test)
+        print(type(y_pred))
         print("SMSE:", sqrt(mean_squared_error(y_test, y_pred)))
 
 

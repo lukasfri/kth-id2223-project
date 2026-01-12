@@ -597,6 +597,8 @@ def create_X_from_df(df: pd.DataFrame) -> pd.DataFrame:
             "arrival_time_planned",
             "arrival_time_planned_prev",
             "arrival_time_late_prev",
+            # "route_id",
+            # "trip_id",
             # "temperature_2m_mean",
             # "precipitation_sum",
             # "wind_speed_10m_max",
@@ -643,6 +645,6 @@ def create_X_from_df(df: pd.DataFrame) -> pd.DataFrame:
     df_X = df_X.loc[mask].reset_index(drop=True)
 
     # Time-related columns are already represented as seconds.
-    df_X = df_X.astype("float")
+    df_X = df_X
 
     return df_X
