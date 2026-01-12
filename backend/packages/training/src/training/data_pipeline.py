@@ -63,6 +63,8 @@ def _load_and_filter_rt_file_with_trip_id(path: str, trip_ids: set[str]) -> pd.D
     # Filter to only wanted trip_ids
     df_tmp = df_tmp[df_tmp["trip_id"].isin(trip_ids)]
 
+    print("Processed file: ", path)
+
     return df_tmp
 
 
@@ -73,25 +75,28 @@ def make_df_from_route_id(route_id:str|set[str], start_date: date, end_date: dat
 
     root_dir = os.environ.get("ROOT_DIR", ".")
     static_data: StaticData
-    if os.path.exists(f"{root_dir}/data/data-tmp/static_pkl/trips.pkl"):
+    if os.path.exists(f"{root_dir}/data/koda-static/data-tmp/trips.pkl"):
         print("Using pickled static data")
-        static_data = StaticData.load_from_pkl(f"{root_dir}/data/data-tmp/static_pkl")
+        static_data = StaticData.load_from_pkl(f"{root_dir}/data/koda-static/data-tmp/")
     else:
-        static_data = StaticData.load_static_data(f"{root_dir}/data/data-tmp")
-        static_data.save_to_pkl(f"{root_dir}/data/data-tmp/static_pkl")
+        static_data = StaticData.load_static_data(f"{root_dir}/data/koda-static/data-tmp")
+        static_data.save_to_pkl(f"{root_dir}/data/koda-static/data-tmp")
 
     # print(static_data.stops.head())
+    trip_ids_set = {}
     if isinstance(route_id, str):
         trip_ids_set = set(static_data.trips.loc[static_data.trips["route_id"] == route_id].index.dropna())
+
     elif isinstance(route_id, set):
         trip_ids_set = set(static_data.trips.loc[static_data.trips["route_id"].isin(route_id)].index.dropna())
+
     #station_df = static_data.stops[static_data.stops["stop_name"].isin(station_targets)]
 
     print("Number of trips", len(trip_ids_set))
 
     #station_ids: set[str] = set(station_df["stop_id"])
 
-    base_dir = os.path.join(root_dir, "data", "data-tmp-rt", "sl", "TripUpdates")
+    base_dir = os.path.join(root_dir, "data", "koda-rt", "data-tmp-rt", "sl", "TripUpdates")
 
     # 1) Discover all files in a canonical (sorted) order
     day = start_date
@@ -156,6 +161,12 @@ def make_df_from_route_id(route_id:str|set[str], start_date: date, end_date: dat
             df_tmp = results_by_path.get(path)
             if df_tmp is not None and not df_tmp.empty:
                 ordered_dfs.append(df_tmp)
+
+        # ordered_dfs: list[pd.DataFrame] = []
+        # for path in rt_file_paths:
+        #     df_tmp = _load_and_filter_rt_file_with_trip_id(path, trip_ids_set)
+        #     if df_tmp is not None and not df_tmp.empty:
+        #         ordered_dfs.append(df_tmp)
 
         if ordered_dfs:
             df_rt = pd.concat(ordered_dfs)
@@ -356,24 +367,23 @@ def lag_times(df_exploded_with_stop_times: pd.DataFrame) -> pd.DataFrame:
     df_exploded_with_stop_times["arrival_time_prev"] = (
         df_exploded_with_stop_times.groupby("trip_id")["arrival_time"].shift(1)
     )
-    df_exploded_with_stop_times["departure_time_prev"] = (
-        df_exploded_with_stop_times.groupby("trip_id")["departure_time"].shift(1)
-    )
+    # df_exploded_with_stop_times["departure_time_prev"] = (
+    #     df_exploded_with_stop_times.groupby("trip_id")["departure_time"].shift(1)
+    # )
     df_exploded_with_stop_times["arrival_time_planned_prev"] = (
         df_exploded_with_stop_times.groupby("trip_id")["arrival_time_planned"].shift(1)
     )
-    df_exploded_with_stop_times["departure_time_planned_prev"] = (
-        df_exploded_with_stop_times.groupby("trip_id")["departure_time_planned"].shift(
-            1
-        )
-    )
+    # df_exploded_with_stop_times["departure_time_planned_prev"] = (
+    #     df_exploded_with_stop_times.groupby("trip_id")["departure_time_planned"].shift(
+    #         1
+    #     )
+    # )
     df_exploded_with_stop_times["arrival_time_late_prev"] = (
         df_exploded_with_stop_times.groupby("trip_id")["arrival_time_late"].shift(1)
     )
-    df_exploded_with_stop_times["departure_time_late_prev"] = (
-        df_exploded_with_stop_times.groupby("trip_id")["departure_time_late"].shift(1)
-    )
-
+    # df_exploded_with_stop_times["departure_time_late_prev"] = (
+    #     df_exploded_with_stop_times.groupby("trip_id")["departure_time_late"].shift(1)
+    # )
     # print(df_exploded_with_stop_times.dtypes)
     # print(df_exploded_with_stop_times.head(40))
 
@@ -447,13 +457,32 @@ def create_X_Y_df(
 
 def create_X_Y_df_with_route(
     route_id: str|set[str], start_date: date, end_date: date
-) -> tuple[pd.DataFrame, pd.DataFrame]:
+) -> tuple[pd.DataFrame, pd.DataFrame]|dict[str,tuple[pd.DataFrame, pd.DataFrame]]:
     
-    df = make_df_from_route_id(
-        route_id, start_date, end_date
-    )
-    df_lag = lag_times(df)
+    root_dir = os.environ.get("ROOT_DIR", ".")
+    pkl_path = f"{root_dir}/data/koda-rt/{start_date}_processed_df.pkl"
+    
+    if os.path.exists(pkl_path):
+        print("using pickled data in ", pkl_path)
+        df = pd.read_pickle(pkl_path)
+    else:
+        df = make_df_from_route_id(
+            route_id, start_date, end_date
+        )
+        print("pickling dataframe to ")
 
+        df.to_pickle(pkl_path)
+    
+    print("Make Dataframe, len:", df.size)
+    df_lag = lag_times(df)
+    needed_cols = [
+        "route_id",
+        "arrival_time_planned",
+        "arrival_time_planned_prev",
+        "arrival_time_late_prev",
+        "arrival_time_late",
+    ]
+    df_lag = df_lag[needed_cols]
     # Fetch historical weather for the same date range
     # latitude = float(os.environ.get("WEATHER_LATITUDE", "59.3293"))
     # longitude = float(os.environ.get("WEATHER_LONGITUDE", "18.0686"))
@@ -480,11 +509,26 @@ def create_X_Y_df_with_route(
     #     )
     # else:
     #     raise Exception("Could not get weather")
+
+    res = {}
+
+    if isinstance(route_id, set):
+        for r in route_id:
+            print("filtering for route_id", r)
+            df_tmp = df_lag[df_lag["route_id"] == r]
+            res[r] = _make_X_Y_df_help(df_tmp)
+
+        return res
+    else:
+        print("running _make_X_Y_df_help")
+        return _make_X_Y_df_help(df_lag[df_lag["route_id"] == route_id])
+
+def _make_X_Y_df_help(df_lag:pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     x_cols = [
             "arrival_time_planned",
             "arrival_time_planned_prev",
             "arrival_time_late_prev",
-            "route_id"
+            #"route_id"
             # "temperature_2m_mean",
             # "precipitation_sum",
             # "wind_speed_10m_max",
@@ -492,11 +536,12 @@ def create_X_Y_df_with_route(
         ]
    
     y_col = "arrival_time_late"
-
+    print("before copy")
     # Build X and y only from the relevant columns
     df_X = df_lag[x_cols].copy()
 
     df_y = df_lag[y_col].copy()
+    print("after copy")
 
 
 
@@ -521,7 +566,7 @@ def create_X_Y_df_with_route(
         """
         td = pd.to_timedelta(s, errors="coerce")
         return td.dt.total_seconds().astype("float")
-
+    print("before conversion")
     # Convert planned arrival timestamps -> seconds since midnight
     for col in ["arrival_time_planned", "arrival_time_planned_prev"]:
         if col in df_X.columns:
@@ -531,16 +576,18 @@ def create_X_Y_df_with_route(
     if "arrival_time_late_prev" in df_X.columns:
         df_X["arrival_time_late_prev"] = timedelta_to_seconds(df_X["arrival_time_late_prev"])
 
-    df_y[y_col] = timedelta_to_seconds(df_y[y_col])
+    df_y = timedelta_to_seconds(df_y)
 
+    print("dropping nans")
         # Drop rows only where X_cols or y_col are NA (ignore NA in other df_lag cols)
     mask = df_X.notna().all(axis=1) & df_y.notna()
     df_X = df_X.loc[mask].reset_index(drop=True)
     df_y = df_y.loc[mask].reset_index(drop=True)
 
     # Time-related columns are already represented as seconds.
-    df_X = df_X.astype("float")
-    df_y = df_y.astype("float")
+    # df_X = df_X.astype("float")
+    # df_y = df_y.astype("float")
+    print("finished _make_X_Y_df_helper")
 
     return df_X, df_y
 

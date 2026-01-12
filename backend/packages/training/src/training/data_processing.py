@@ -147,16 +147,16 @@ def explode_to_stops_with_join_static(
     df_exploded_with_stop_times["arrival_time_planned"] = df_exploded_with_stop_times["start_date"] + df_exploded_with_stop_times["arrival_time_seconds_since_midnight"]
     df_exploded_with_stop_times["departure_time_planned"] = df_exploded_with_stop_times["start_date"] + df_exploded_with_stop_times["departure_time_seconds_since_midnight"]
 
-    def _normalize_late_seconds(diff: pd.Series) -> pd.Series:
-        """
-        Normalize lateness (in seconds) into a reasonable range by
-        folding away whole-day offsets. Values end up in [-12h, 12h).
-        """
-        # Keep NA as NA
-        diff_float = diff.astype("float")
-        # Shift by 12h, fold into [0, 24h), then shift back
-        diff_wrapped = ((diff_float + 43200) % 86400) - 43200
-        return diff_wrapped.round().astype("Int64")
+    # def _normalize_late_seconds(diff: pd.Series) -> pd.Series:
+    #     """
+    #     Normalize lateness (in seconds) into a reasonable range by
+    #     folding away whole-day offsets. Values end up in [-12h, 12h).
+    #     """
+    #     # Keep NA as NA
+    #     diff_float = diff.astype("float")
+    #     # Shift by 12h, fold into [0, 24h), then shift back
+    #     diff_wrapped = ((diff_float + 43200) % 86400) - 43200
+    #     return diff_wrapped.round().astype("Int64")
     
     print(df_exploded_with_stop_times[["arrival_time", "arrival_time_planned"]].dtypes)
 
