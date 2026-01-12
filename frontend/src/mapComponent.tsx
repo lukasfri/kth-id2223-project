@@ -33,13 +33,23 @@ export default React.memo(Pin);
 
 const stockholmCenter = { lng: 18.063, lat: 59.334 };
 
+interface StopHoverInfo {
+  id: string;
+  name: string;
+  longitude: number;
+  latitude: number;
+}
+
 export interface RouteLayerProps {
   routeName: string;
   lineColor: string;
   stopColor: string;
+  setSelectedStop?: (stopInfo: StopHoverInfo | null) => void;
 }
 
-export const RouteComponent = ({routeName, lineColor, stopColor}: RouteLayerProps) => {
+export const RouteComponent = ({routeName, lineColor, stopColor,
+  setSelectedStop
+}: RouteLayerProps) => {
   const { data, error, isLoading } = $api.useQuery(
     "get",
     "/routes/{route_short_name}",
@@ -63,7 +73,7 @@ export const RouteComponent = ({routeName, lineColor, stopColor}: RouteLayerProp
       },
       ...data.stops.map(stop => ({
         'type': 'Feature',
-        'properties': { name: stop.name },
+        'properties': { id: stop.id, name: stop.name },
         'geometry': {
           'type': 'Point',
           'coordinates': [stop.position.longitude, stop.position.latitude]
@@ -140,7 +150,6 @@ export const RouteVehiclePositions = ({routeName, vehicleColor, vehicleStrokeCol
           longitude={vehicle.position.longitude}
           latitude={vehicle.position.latitude}
           anchor="bottom"
-          draggable
           rotation={vehicle.position.bearing}
           rotationAlignment="map"
           onClick={(e) => {
@@ -150,6 +159,8 @@ export const RouteVehiclePositions = ({routeName, vehicleColor, vehicleStrokeCol
               longitude: vehicle.position.longitude,
               latitude: vehicle.position.latitude,
               vehicleId: vehicle.id,
+              tripId: vehicle.trip_id,
+              nextStopId: vehicle.next_stop_id,
               scheduledArrivalTime: vehicle.next_stop_scheduled_arrival_time,
               estimatedArrivalTime: vehicle.next_stop_estimated_arrival_time ?? undefined,
             })
@@ -167,12 +178,16 @@ interface HoverInfo {
   longitude: number;
   latitude: number;
   vehicleId: string;
+  tripId: string;
+  nextStopId: string;
   scheduledArrivalTime?: number;
   estimatedArrivalTime?: number;
 }
 
 export interface MapComponentProps {
 }
+
+const HOUR_MS = 3600 * 1000;
 
 export const MapComponent = ({}: MapComponentProps) => {
   const RED_LINE = ["#FF0000", "#DF0000"];
@@ -221,8 +236,10 @@ export const MapComponent = ({}: MapComponentProps) => {
         >
           <div className="p-2">
             <p>Vehicle ID: {hoverInfo.vehicleId}</p>
-            <p>Scheduled Arrival Time: {hoverInfo.scheduledArrivalTime ? new Date(hoverInfo.scheduledArrivalTime * 1000).toLocaleTimeString("sv-SE") : "N/A"}</p>
-            <p>Estimated Arrival Time: {hoverInfo.estimatedArrivalTime ? new Date(hoverInfo.estimatedArrivalTime * 1000).toLocaleTimeString("sv-SE") : "N/A"}</p>
+            <p>Trip ID: {hoverInfo.tripId}</p>
+            <p>Next Stop ID: {hoverInfo.nextStopId}</p>
+            <p>Scheduled Arrival Time: {hoverInfo.scheduledArrivalTime ? new Date(hoverInfo.scheduledArrivalTime * 1000 - HOUR_MS).toLocaleTimeString("sv-SE") : "N/A"}</p>
+            <p>Estimated Arrival Time: {hoverInfo.estimatedArrivalTime ? new Date(hoverInfo.estimatedArrivalTime * 1000 - HOUR_MS).toLocaleTimeString("sv-SE") : "N/A"}</p>
 
           </div>
         </Popup>

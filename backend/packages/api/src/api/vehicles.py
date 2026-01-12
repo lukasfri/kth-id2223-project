@@ -133,7 +133,13 @@ def load_gtfs_rt_positions() -> pd.DataFrame:
     # Only keep the last line stop_sequence per trip_id
     # multiindex: trip_id	stop_sequence	
     trip_updates_df = trip_updates_df.sort_values(['trip_id', 'stop_sequence'])
-    trip_updates_df = trip_updates_df.groupby(level='trip_id').last()
+
+    current_time_utc = pd.Timestamp.now(tz="Europe/Stockholm")
+    # Remove timezone from current time for comparison
+    current_time_utc = current_time_utc.tz_localize(None)
+    trip_updates_df = trip_updates_df[(trip_updates_df["arrival_time_planned"] + trip_updates_df["arrival_time_late_prev"]) > current_time_utc]
+
+    trip_updates_df = trip_updates_df.groupby(level='trip_id').first()
 
     trip_updates_df = trip_updates_df.reset_index()
 

@@ -51,9 +51,9 @@ def feed_entity_to_trip_update_dict(feed_message: gtfs_rt.FeedMessage, entity: g
                 "stop_sequence": stu.stop_sequence,
                 "stop_id": stu.stop_id,
                 "arrival_time": stu.arrival.time if stu.HasField("arrival") else None,
-                "departure_time": stu.departure.time
-                if stu.HasField("departure")
-                else None,
+                "arrival_time_uncertainty": stu.arrival.uncertainty if stu.HasField("arrival") else None,
+                "departure_time": stu.departure.time if stu.HasField("departure") else None,
+                "departure_time_uncertainty": stu.departure.uncertainty if stu.HasField("departure") else None,
                 "schedule_relationship": stu.schedule_relationship,
             }
             for stu in entity.trip_update.stop_time_update
