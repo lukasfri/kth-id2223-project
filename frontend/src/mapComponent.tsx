@@ -151,7 +151,7 @@ export const RouteVehiclePositions = ({routeName, vehicleColor, vehicleStrokeCol
               latitude: vehicle.position.latitude,
               vehicleId: vehicle.id,
               scheduledArrivalTime: vehicle.next_stop_scheduled_arrival_time,
-              estimatedArrivalTime: vehicle.next_stop_estimated_arrival_time,
+              estimatedArrivalTime: vehicle.next_stop_estimated_arrival_time ?? undefined,
             })
           }}
         >

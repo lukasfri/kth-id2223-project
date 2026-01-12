@@ -92,7 +92,7 @@ export interface components {
             /** Next Stop Scheduled Arrival Time */
             next_stop_scheduled_arrival_time: number;
             /** Next Stop Estimated Arrival Time */
-            next_stop_estimated_arrival_time: number;
+            next_stop_estimated_arrival_time: number | null;
         };
         /** VehiclePosition */
         VehiclePosition: {
